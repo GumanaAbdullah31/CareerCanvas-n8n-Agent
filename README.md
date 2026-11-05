@@ -9,7 +9,7 @@
 | Resource | URL / Access | Description |
 | :--- | :--- | :--- |
 | **Telegram Bot** | [t.me/CareerCanvasAI_bot](https://t.me/CareerCanvasAI_bot) | Interactive user interface to test and chat with the AI Agent in real time. |
-| **n8n Webhook Endpoint** |`https://solely-burner-geology-equipped.trycloudflare.com/webhook-test/8ec12ab6-199f-458e-a01f-a96b1f1437bd/webhook  | Production Webhook endpoint connecting Telegram requests to the n8n execution pipeline. | to the n8n execution pipeline. |
+| **n8n Webhook Endpoint** |https://solely-burner-geology-equipped.trycloudflare.com/webhook/8ec12ab6-199f-458e-a01f-a96b1f1437bd | Production Webhook endpoint connecting Telegram requests to the n8n execution pipeline. | to the n8n execution pipeline. |
 | **GitHub Repository** | [CareerCanvas-n8n-Agent](https://github.com/GumanaAbdullah31/CareerCanvas-n8n-Agent) | Central repository housing workflow JSON schema and project documentation. |
 
 ---
