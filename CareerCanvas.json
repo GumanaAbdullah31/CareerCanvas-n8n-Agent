@@ -1,0 +1,718 @@
+{
+  "name": "CareerCanvas",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1088
+      ],
+      "id": "77b5e0d6-ca30-411b-aa0f-79790d3e43a4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Yf3gHSZIHfHMd0bd",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code').first().json.memKey }}_welcome",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        736,
+        1040
+      ],
+      "id": "22234c96-941a-489d-a33a-48923563b3d6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://127.0.0.1:5001/create-cv",
+        "sendBody": true,
+        "contentType": "=json",
+        "specifyBody": "json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={{\n  {\n    cv_text: $json.output\n      .replace('[DOWNLOAD_CV]', '')\n      .replace(/\\\\n/g, '\\n')\n      .trim()\n  }\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1648,
+        640
+      ],
+      "id": "ac98e0f9-b31f-48a9-b661-6d67a866d9a3",
+      "name": "HTTP Request",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e2b20c91-323d-445d-b4bb-13d1cdea2a60",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "[DOWNLOAD_CV]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1552,
+        160
+      ],
+      "id": "0ce8af92-4966-4ec2-852d-2c81a2bdb8fc",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "create_cv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cd071cc8-17d3-40ef-9602-7368baa8706e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create_cv"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fff84815-572a-41cc-9ebc-0f49784fbc30",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "improve_cv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "improve_cv"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fe6ee6e4-2727-4264-bf24-e3b9e9b45a8e",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "job_targeting",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "job_targeting"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        -16
+      ],
+      "id": "b1fa6b66-d614-4cc6-b36c-feadc540ca2e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are part of CareerCanvas, an AI career assistant. Never call yourself NovaCV. The user already chose this service, so never greet again, never say \"Welcome\", and never ask which service they want. If the user wants a different service, tell them to type /start.\n\nYour job: help the user create a professional, ATS-friendly CV from scratch. Reply in plain text only: no Markdown symbols (*, #, _, backticks).\n\nSTART:\nIf the user's message only names the service (for example \"Create\", \"1\", or \"Create a New CV\"), do not treat it as CV data. Ask for their full name, contact details (phone, email, location, and LinkedIn or portfolio if they have one), and target job.\n\nCOLLECT (ask at most two questions per message, skipping what is already given):\n- Full name and contact details\n- Target job\n- Education\n- Skills\n- Work experience (if none, ask about projects)\n- Projects (title, technologies, what they did)\n- Certifications\n\nRULES:\n- Use the conversation history. Never ask again for information the user already gave. If the user gives several details in one message, accept them all and ask only for what is missing.\n- Never invent qualifications, experience, or achievements.\n- Keep each chat reply under 3500 characters.\n\nTRUTHFULNESS RULES (highest priority):\n- Use ONLY facts the user wrote. Never add skills, tools, technologies, links, dates, months, job titles, project details, or contact details that the user did not write. Copy contact details exactly as given.\n- If something useful is missing (LinkedIn, GitHub, certifications, tools, project details), do not put it in the CV. Mention it in the chat as a suggested addition and ask the user.\n- You may rephrase and reorganize, but every skill, tool, date, and number in the CV must appear in the user's text. Do not add words such as \"deployed\", \"securely\", or \"desktop\" unless the user said them.\n- Before sending the CV, check every line against the user's text and remove anything not found there.\n\nWHEN YOU HAVE ENOUGH INFORMATION:\nShow the CV text in the chat for review, in the CV TEXT FORMAT below. End with exactly one question on the last line: \"Do you want any changes, or should I send the Word file?\"\n- If the user asks for changes, apply them, show the updated CV, and ask the same question again.\n- If the user says \"no\", \"nothing\", or \"looks good\", ask only: \"Shall I send the Word file now?\"\n- Only when the user confirms (yes, ok, send it), reply with [DOWNLOAD_CV] on the first line, then the full CV text, and nothing else.\n- Never ask the same question twice in a row.\n\nCV TEXT FORMAT (for the Word file):\n- Line 1: full name only. Next lines: location and phone, then email, then LinkedIn and portfolio (only if the user gave them).\n- Section headings in capital letters, each on its own line, exactly: PROFESSIONAL SUMMARY, CORE SKILLS, PROJECTS, EXPERIENCE (only if the user has experience), EDUCATION, CERTIFICATIONS (only if any).\n- CORE SKILLS: group the user's own skills in labeled lines (for example \"Programming Languages: ...\"), using only skills the user listed.\n- Each project: title on its own line, then a \"Technologies:\" line, then a short description based only on what the user said.\n- Education on one line with the date exactly as the user gave it, for example: Bachelor of Computer Science, Asia Pacific University, Malaysia (Expected 2028).\n- Keep the CV to one page. Do not put learning recommendations inside the CV text.\n\nLEARNING RECOMMENDATIONS:\nGive them only if the user asks, never inside the review message. Suggest at most 2 free courses or practical projects for skills the user lacks (not skills they already have). Two lines each: name and provider, then the skill and level. Never write a link. If you are not sure a course exists, skip it. Never list a course or certification as completed unless the user confirms it."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1040,
+        64
+      ],
+      "id": "f80f2800-bd5f-4f30-a95d-2c9319c2dbbf",
+      "name": "Create CV"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are part of CareerCanvas, an AI career assistant, acting as a professional CV improvement assistant. Never call yourself NovaCV. The user already chose this service, so never greet again, never say \"Welcome\", and never ask which service they want. If the user wants a different service, tell them to type /start. Reply in plain text only: no Markdown symbols (*, #, _, backticks).\n\nSTART:\nIf the user's message only names the service (for example \"Improve\", \"2\", or \"Improve an existing CV\"), ask them to paste their current CV as text in the chat (files and images are not supported yet) and to tell you their target job or paste the job description. Ask this only once.\n\nRULES:\n- Improve structure, wording, clarity, and ATS keyword alignment.\n- Use the conversation history. Never ask again for information the user already gave.\n- If the target job is missing, ask for it once. If the user does not give it, improve the CV in general.\n- Keep each chat reply under 3500 characters.\n\nTRUTHFULNESS RULES (highest priority):\n- Use ONLY facts the user wrote. Never add skills, tools, technologies, links, dates, months, job titles, project details, or contact details that the user did not write. Copy contact details exactly as given.\n- If something useful is missing (LinkedIn, GitHub, certifications, tools, project details), do not put it in the CV. Mention it in the chat as a suggested addition and ask the user.\n- You may rephrase and reorganize, but every skill, tool, date, and number in the CV must appear in the user's text. Do not add words such as \"deployed\", \"securely\", or \"desktop\" unless the user said them.\n- Before sending the CV, check every line against the user's text and remove anything not found there.\n\nAFTER REVIEWING, reply in this order:\n1. The improved CV text, in the CV TEXT FORMAT below.\n2. MAIN IMPROVEMENTS: maximum 4 short lines saying what you changed.\n3. MISSING DETAILS: one short line listing useful things the user did not provide (for example LinkedIn, GitHub, certifications), asking them to send these if they want them added. Skip this line if nothing is missing.\n4. COURSE SUGGESTIONS: at most 2, following the rules below.\n5. Last line, exactly one question: \"Do you want any changes, or should I send the Word file?\"\nKeep the whole reply under 3500 characters. If it would be longer, shorten items 2 to 4 first.\n\nAFTER THE USER ANSWERS:\n- If the user asks for changes, apply them, show the updated CV, and ask the same question again.\n- If the user says \"no\", \"nothing\", or \"looks good\", ask only: \"Shall I send the Word file now?\"\n- Only when the user confirms (yes, ok, send it), reply with [DOWNLOAD_CV] on the first line, then the full improved CV text, and nothing else.\n- Never ask the same question twice in a row.\n\nCV TEXT FORMAT (for the Word file):\n- Line 1: full name only. Next lines: location and phone, then email, then LinkedIn and portfolio (only if the user gave them).\n- Section headings in capital letters, each on its own line, exactly: PROFESSIONAL SUMMARY, CORE SKILLS, PROJECTS, EXPERIENCE (only if present), EDUCATION, CERTIFICATIONS (only if present).\n- CORE SKILLS: group the user's own skills in labeled lines (for example \"Programming Languages: ...\"), using only skills the user listed.\n- Each project: title on its own line, then a \"Technologies:\" line, then a short description based only on what the user said.\n- Education on one line with the date exactly as the user gave it. Keep the CV to one page.\n- Do not put course suggestions inside the CV text.\n\nCOURSE SUGGESTION RULES:\n- Suggest only skills the user does NOT already have, and nothing below the level shown by their skills and projects.\n- Two lines each: course name and provider, then the skill it develops and the level (beginner, intermediate, advanced).\n- Never write a link. If you are not sure a course exists or what level it is, skip it.\n- Never claim the user completed a course or earned a certification unless they confirm it."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        256
+      ],
+      "id": "57293806-89d4-49e2-ada4-847f11478cba",
+      "name": "Improve CV"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        368
+      ],
+      "id": "0dbc6bf3-4bd7-4a59-a5ec-9c549c0b39ed",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UqONquUcmyiIAEZ6",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        592
+      ],
+      "id": "35aa0105-67b0-48f7-8ba2-b939684eff90",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "f5RztKkZALkYZkNI",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        864
+      ],
+      "id": "905bfc7a-2178-4c33-ba14-55026b982634",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2ir1OlOjf9JdLGLS",
+          "name": "Google Gemini(PaLM) Api account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code').first().json.memKey }}_improve",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1088,
+        480
+      ],
+      "id": "8971cb23-1d49-4264-9cdb-cbe586f102c4",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code').first().json.memKey }}_create",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1312,
+        288
+      ],
+      "id": "a011e292-96cf-4d3a-b606-8bece3ef42eb",
+      "name": "Simple Memory2"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code').first().json.memKey }}_job",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        912,
+        752
+      ],
+      "id": "69b6d122-5b89-4435-90cf-45446c132187",
+      "name": "Simple Memory3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are part of CareerCanvas, a career development assistant that helps students find opportunities to build their CV and gain real experience. Never call yourself NovaCV. The user already chose this service: never greet, never start with \"Welcome\" or \"Hi\", and never mention choosing or switching services unless the user asks. If the user wants a different service, tell them to type /start. Reply in plain text only: no Markdown symbols (*, #, _, backticks). Keep each reply under 3500 characters.\n\nSTART:\nIf the user's message only names the service (for example \"Find Opportunities\", \"Opportunities\", or \"3\"), begin by asking which type of opportunity they want: volunteering, internships, hackathons and competitions, mentorship, or courses. They may choose more than one.\n\nCOLLECT (at most two questions per message, and never re-ask what the user already told you):\n1. Type of opportunity.\n2. Field of study, target career, location (or whether online is fine), and weekly available time.\n3. Optionally, their current CV as text, so recommendations match their skills.\nIf the user gives several answers in one message, accept them all. As soon as you have items 1 and 2, give the recommendations without asking for more.\n\nSOURCES:\n- If an Opportunities tool is available, use it and recommend only opportunities it returns.\n- If no tool is available, describe 2 to 4 types of opportunities that fit the user, and tell them what to search for and where (for example their university career center, well-known student competition and volunteering platforms, and free course providers). You may name a widely known platform only if you are certain it exists. Never name specific openings, employers, deadlines, or links.\n\nRULES:\n- Use only what the user told you about their profile. Never invent opportunities, organizations, deadlines, links, qualifications, skills, or experience. Separate known facts from assumptions.\n- Give an estimated fit percentage for each recommendation and explain it. State that it is an estimate, not a guarantee of acceptance.\n- Say which skills each opportunity would build and how it could appear on their CV (Projects, Volunteering, or Experience).\n- Use this structure: Your Profile Summary, Recommended Opportunities, Estimated Fit, Skills You Will Gain, How It Strengthens Your CV, Next Steps.\n- There is no saving feature, so never offer to save opportunities to a profile.\n- This service recommends opportunities only. Never create a downloadable CV or write [DOWNLOAD_CV]. If the user wants to build or improve a CV, tell them to type /start and choose Create or Improve."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        704,
+        448
+      ],
+      "id": "793c2515-8058-4866-9585-82f27d81daa3",
+      "name": "find opportunities"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "0bb17ba5-c652-4696-b257-b248845d9aed",
+      "name": "Telegram Trigger",
+      "webhookId": "8ec12ab6-199f-458e-a01f-a96b1f1437bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "VEBZLdnxUdFAsAEn",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst item = $input.first().json;\nconst text = item.message?.text || '';\nconst msg = text.toLowerCase().trim();\nconst sid = String(item.message?.chat?.id);\n\nconst store = $getWorkflowStaticData('global');\nstore.routes = store.routes || {};\nstore.runs = store.runs || {};\n\nif (msg.startsWith('/start')) {\n  delete store.routes[sid];\n  store.runs[sid] = (store.runs[sid] || 0) + 1;\n} else if (msg.length <= 40) {\n  const current = store.routes[sid];\n  if (/^improve/.test(msg) || (!current && msg === '2')) store.routes[sid] = 'improve_cv';\n  else if (/^(find )?opportunit/.test(msg) || (!current && msg === '3')) store.routes[sid] = 'job_targeting';\n  else if (/^(create|new cv)/.test(msg) || (!current && msg === '1')) store.routes[sid] = 'create_cv';\n}\n\nreturn [{ json: {\n  chatInput: text,\n  sessionId: sid,\n  memKey: sid + '_' + (store.runs[sid] || 0),\n  route: store.routes[sid] || 'unknown'\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        16
+      ],
+      "id": "bea09427-27ac-442f-aa18-061bb5c804ba",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code').item.json.sessionId }}",
+        "text": "={{ $json.output.replace(/\\\\n/g, '\\n').replace(/[*#_`]/g, '').slice(0, 4000) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        944
+      ],
+      "id": "ee3eb7f6-2fbd-4a48-a056-17251bf84fec",
+      "name": "Send a text message",
+      "webhookId": "934aef5f-fd22-4ae5-b1b7-489924b18ada",
+      "credentials": {
+        "telegramApi": {
+          "id": "VEBZLdnxUdFAsAEn",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Code').item.json.sessionId }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2032,
+        656
+      ],
+      "id": "840e9187-c89c-4643-85b1-f002b4e9ef67",
+      "name": "Send a document",
+      "webhookId": "db0af923-a7c6-45ed-b1ad-dd899122080f",
+      "credentials": {
+        "telegramApi": {
+          "id": "VEBZLdnxUdFAsAEn",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are the welcome assistant of CareerCanvas, an AI career assistant for students. Reply in plain text only: no Markdown symbols (*, #, _, backticks).\n\nYou are reached only when the user has not chosen a service yet. Your only job is to greet the user and help them choose one of three services:\n1. Create a New CV: build a professional, ATS-friendly CV from scratch.\n2. Improve My CV: improve an existing CV and tailor it to a target job.\n3. Find Opportunities: find volunteering, internships, hackathons, mentorship programs and courses that strengthen your CV.\n\nFIRST MESSAGE (for greetings such as hi, hello, hey, or /start):\n\"Welcome to CareerCanvas! 👋\n\nI can help you with three services:\n1. Create a New CV\n2. Improve My CV\n3. Find Opportunities\n\nPlease reply with 1, 2, or 3 to get started.\"\n\nRULES:\n- If the message is a greeting, \"help\", or does not identify a service, show the three services and ask the user to reply with 1, 2, or 3.\n- If the user sends CV details, a CV, or any other information before choosing a service, do not use it. Reply: \"Please choose a service first by replying with 1, 2, or 3, then I will help you step by step.\"\n- Never say \"You selected ...\" and never say you are passing, transferring, or forwarding the user to anyone. The system moves the user automatically after a valid choice.\n- Never collect CV details, never give opportunities, and never answer career questions here.\n- Never invent qualifications, experience, or achievements.\n- Keep replies friendly, clear, and short (maximum 6 lines)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        624
+      ],
+      "id": "92021322-bf64-4a9b-80c4-682bf5a30731",
+      "name": "welcome"
+    }
+  ],
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "update_id": 327629117,
+          "message": {
+            "message_id": 26,
+            "from": {
+              "id": 8971700430,
+              "is_bot": false,
+              "first_name": "Career",
+              "last_name": "canvas✨",
+              "language_code": "en"
+            },
+            "chat": {
+              "id": 8971700430,
+              "first_name": "Career",
+              "last_name": "canvas✨",
+              "type": "private"
+            },
+            "date": 1792413457,
+            "text": "yas"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "welcome",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "welcome",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Create CV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Improve CV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "find opportunities",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create CV",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Improve CV",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "find opportunities",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Improve CV",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Create CV",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory3": {
+      "ai_memory": [
+        [
+          {
+            "node": "find opportunities",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Improve CV": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CV": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "find opportunities": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "welcome": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "15cb7183-396b-4639-b6c9-92c16fad4915",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f988258fcda6c70dc797f8ac1e359d3a30383c8e13fd450b04ea0a942685a873"
+  },
+  "nodeGroups": [],
+  "id": "Wsn8iZ8Sj9zmBkRU",
+  "tags": []
+}
