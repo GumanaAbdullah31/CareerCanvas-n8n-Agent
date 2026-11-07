@@ -1,39 +1,65 @@
-# CareerCanvas - AI Career Coaching Agent
+# CareerCanvas: An Agentic AI Career and CV Assistant
 
-**CareerCanvas** is an automated AI Career Coaching Agent built using **n8n** workflows, **Telegram Bot**, and **Google Gemini AI**. The agent assists job seekers with career guidance, resume review suggestions, and professional interview preparation.
+CareerCanvas is a Telegram chatbot built with n8n and Google Gemini. It offers three services in one chat: **Create a New CV**, **Improve My CV**, and **Find Opportunities**. After the user confirms, the final CV is generated as a Word file (`CareerCanvas.docx`) and sent back in Telegram.
 
----
+Course: CT017-3-1 Introduction to Artificial Intelligence (Group Assignment 13)
+Telegram bot: https://t.me/CareerCanvasAI_bot
 
-## 🔗 Project Links & Endpoints
+> **Note:** The bot runs on a local computer. It replies only while n8n, the Flask service and the Cloudflare Tunnel are running.
 
-| Resource | URL / Access | Description |
-| :--- | :--- | :--- |
-| **Telegram Bot** | [t.me/CareerCanvasAI_bot](https://t.me/CareerCanvasAI_bot) | Interactive user interface to test and chat with the AI Agent in real time. |
-| **n8n Webhook Endpoint** |https://solely-burner-geology-equipped.trycloudflare.com/webhook/8ec12ab6-199f-458e-a01f-a96b1f1437bd | Production Webhook endpoint connecting Telegram requests to the n8n execution pipeline. | to the n8n execution pipeline. |
-| **GitHub Repository** | [CareerCanvas-n8n-Agent](https://github.com/GumanaAbdullah31/CareerCanvas-n8n-Agent) | Central repository housing workflow JSON schema and project documentation. |
+## Repository Contents
 
----
+| File | Purpose |
+|------|---------|
+| `CareerCanvas.json` | Exported n8n workflow (trigger, routing, four AI agents, Word file delivery) |
+| `novacv_service.py` | Flask service that creates the Word file with python-docx |
+| `requirements.txt` | Python libraries needed by the service |
 
-## 🛠 Architecture & Tech Stack
+## Requirements
 
-* **Workflow Automation Engine:** n8n
-* **Interactive Frontend:** Telegram Bot API
-* **AI Model Engine:** Google Gemini AI API (`models/gemini-2.5-flash` / `models/gemini-3.5-flash-lite`)
-* **Tunneling & Security:** Cloudflare Tunnel
+- Node.js and npm
+- n8n (self-hosted Community Edition)
+- Python 3.10 or later
+- Cloudflared (Cloudflare Tunnel)
+- A Telegram bot token from BotFather
+- A Google Gemini API key
 
----
+## Setup
 
-## ⚙️ Environment Variables & Credentials Required
+1. **Install n8n**
+   ```bash
+   npm install -g n8n
+   ```
 
-To run and deploy this n8n workflow locally or on a server, configure the following environment credentials inside your n8n workspace:
+2. **Install the Python libraries**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-1. `TELEGRAM_BOT_TOKEN`: The API Token obtained from `@BotFather`.
-2. `GEMINI_API_KEY`: Google Generative AI API Key for executing model prompts.
+3. **Import the workflow.** In n8n, choose *Import from File* and select `CareerCanvas.json`.
 
----
+4. **Add your own credentials in n8n.** No secret values are stored in this repository.
+   - Telegram: the bot token from BotFather
+   - Google Gemini: your API key
 
-## 📁 Repository Structure
+5. **Check the HTTP Request node.** It should send a POST request to `http://127.0.0.1:5001/create-cv`.
 
-```text
-├── CareerCanvas.json    # Exported n8n workflow JSON file
-└── README.md            # System architecture and deployment documentation# CareerCanvas-n8n-Agent
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `WEBHOOK_URL` | Public HTTPS address of the Cloudflare Tunnel, set before n8n starts |
+
+## Startup Order
+
+Start the components in this order:
+
+1. **Cloudflare Tunnel**
+   ```bash
+   cloudflared tunnel --url http://localhost:5678 --protocol http2
+   ```
+   Copy the `https://...trycloudflare.com` address it prints.
+
+2. **n8n** (with the tunnel address as `WEBHOOK_URL`)
+   ```powershell
+   $env:WEBHOOK_URL="https://your-tunnel-addres
